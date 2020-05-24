@@ -1,0 +1,37 @@
+---
+- name: creating ec2 instance
+  hosts: localhost 
+  connection: local
+
+  roles:
+    - ec2-instane 
+
+
+#- name: configure and deploy the webservers and application code
+#  hosts: jenkins_instance
+#  remote_user: ec2-user
+#  become: true
+#  become_method: sudo
+#  gather_facts: False
+#
+#  roles:
+#    - kami911.java_open_jdk11
+#    - { role: tecris.maven, maven_major: 3, maven_version: 3.6.3, maven_home_parent_directory: /opt } 
+
+- name: configure and deploy the webservers and application code
+  hosts: jenkins_instance
+  remote_user: ec2-user
+  become: true
+  become_method: sudo
+  gather_facts: True
+
+
+  vars:
+    jenkins_hostname: "http://34.230.22.124"
+    #java_packages:
+    #  - openjdk-8-jdk
+
+  roles:
+     #- kami911.java_open_jdk11
+     #- geerlingguy.jenkins
+     - packages

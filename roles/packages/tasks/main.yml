@@ -1,0 +1,29 @@
+---
+# tasks file for packages
+
+- name: installing pacakges 
+  yum: 
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - python-pip
+    - tree
+    - httpd
+  #  - nginx
+
+- name: copying file from local to local 
+  copy: 
+    src: /home/ec2-user/ansible/hello.html 
+    dest: /home/ec2-user/ansible/roles/packages/templates/hello.html
+    mode: 0755
+    remote_src: yes
+  delegate_to: 127.0.0.1
+
+- name: copying to html dir
+  template:
+    src: hello.html
+    dest: /var/www/html
+  notify:
+    - httpd restart
+  tags:
+   - restart

@@ -1,0 +1,72 @@
+---
+- name: SG for jenkins
+  ec2_group:
+    name: Jenkins-SG
+    description: sg with rule descriptions
+    vpc_id: vpc-048641f4d7741524a
+    region: us-east-1
+    rules:
+      - proto: tcp
+        ports:
+        - 8080
+        cidr_ip: 0.0.0.0/0
+        rule_desc: allow all on port 80
+      - proto: tcp
+        ports:
+        - 22
+        cidr_ip: 0.0.0.0/0
+        rule_desc: allow all on port 80
+  register: __jenkinsSG
+  tags:
+    - sg
+
+
+- debug:
+    #var: __jenkinsSG
+    msg: "securtiy groupID is : {{ __jenkinsSG.group_id }}"
+  tags:
+    - create_instance
+
+
+- name: Creating instance for Jenkins
+  ec2:
+    key_name: devops-April
+    group_id: "{{ __jenkinsSG.group_id }}"
+    instance_type: t2.micro
+    image: ami-0323c3dd2da7fb37d
+    wait: yes
+    wait_timeout: 200
+    vpc_subnet_id: subnet-0544aafa4a28a28d9
+    assign_public_ip: yes
+    count_tag:
+      Name: jenkins_server
+    exact_count: 1
+    region: us-east-1
+    instance_tags:
+        Name: jenkins_server
+  register: __jenkinsIP
+  tags: 
+    - create_instance
+
+- debug: 
+    var: __jenkinsIP
+   # msg: "Public IP address of Jenkinsinstance: {{ __jenkinsIP['instances'][0]['public_ip'] }}"
+
+- set_fact:
+    jenkins_instanceIP: "{{ __jenkinsIP['instances'][0]['public_ip'] }}"
+  when: __jenkinsIP is changed
+
+- set_fact:
+    jenkins_instanceIP: "{{  __jenkinsIP['tagged_instances'][0]['public_ip']  }}"
+  when: __jenkinsIP is not changed
+
+- name: addding ansible group
+  add_host:
+    name: '{{ jenkins_instanceIP }}'
+    groupname: jenkins_instance
+
+- name: wait for SSH to come up
+  wait_for:
+    host: "{{ jenkins_instanceIP }}"
+    port: 22
+    state: started
